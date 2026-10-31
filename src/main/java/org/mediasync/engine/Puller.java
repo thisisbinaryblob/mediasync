@@ -11,36 +11,41 @@ public class Puller {
 
     public Puller(Runner run, String serial)
     {
-	this.run = run;
-	this.serial = serial;
+        this.run = run;
+        this.serial = serial;
+    }
+
+    public String getSerial() {
+        return this.serial;
     }
 
     public boolean pull(String remotePath, Path localPath) throws IOException
     {
-	Files.createDirectories(localPath.getParent());
+        Files.createDirectories(localPath.getParent());
 
-	Runner.RunResult rr = runner.adb("-s", serial, "pull", remotePath, localPath.toString());
+        Runner.RunResult rr = run.adb("-s", serial, "pull", remotePath, localPath.toString());
+        System.out.println("find exitc=" + rr.exitc());
+        System.out.println("find raw output:\n" + rr.output());
+        if (rr.exitc() != 0) return false;
 
-	if (rr.exitc() != 0) return false;
+        if (!Files.isRegularFile(localPath)) return false;
 
-	if (!Files.isRegularFile(localPath)) return false;
+        OptionalLong remoteSize = remoteFileSize(remotePath);
 
-	OptionalLong remoteSize = remoteFileSize(remotePath);
+        if (remoteSize.isEmpty()) return false;
 
-	if (remoteSize.isEmpty()) return false;
-
-	long localSize = Files.size(localPath);
-	return localSize == remoteSize.getAsLong();
+        long localSize = Files.size(localPath);
+        return localSize == remoteSize.getAsLong();
     }
 
     private OptionalLong remoteFileSize(String remp)
     {
-	Runner.RunResult rre = runner.adb("-s", serial, "shell", "stat", "-c", "%s", remotePath);
+	Runner.RunResult rre = run.adb("-s", serial, "shell", "stat", "-c", "%s", remp);
 
 	if (rre.exitc() != 0 || rre.output().isBlank())
 	{
-	    rre = runner.adb("-s", serial, "shell", "wc", "-c", remotePath);
-	    if (rre.exitc() != 0 || rre.output().isBlank()) return OptionalLong.empty();
+	    rre = run.adb("-s", serial, "shell", "wc", "-c", remp);
+        if (rre.exitc() != 0 || rre.output().isBlank()) return OptionalLong.empty();
 	}
 
 	String first = rre.output().strip().split("\\s+")[0];

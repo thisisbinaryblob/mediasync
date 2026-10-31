@@ -30,7 +30,7 @@ public class Runner
                 return new RunResult("adb not found", 1);
             }
             String adb = adbpath.get();
-            System.out.println("Info: using adb at " + adb);
+            //System.out.println("Info: using adb at " + adb);
             String[] cmd = new String[args.length + 1];
             cmd[0] = adb;
             System.arraycopy(args, 0, cmd, 1, args.length);
